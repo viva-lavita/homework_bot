@@ -1,15 +1,21 @@
-...
+import os
+from time import time
+
+from dotenv import load_dotenv
+from typing import Union, Final, Optional
+import logging
+from telegram import Bot
 
 load_dotenv()
 
 
-PRACTICUM_TOKEN = ...
-TELEGRAM_TOKEN = ...
-TELEGRAM_CHAT_ID = ...
+PRACTICUM_TOKEN: Final = os.getenv('PRACTICUM_TOKEN')
+TELEGRAM_TOKEN: Final = os.getenv('TELEGRAM_TOKEN')
+TELEGRAM_CHAT_ID: Final = os.getenv('TELEGRAM_CHAT_ID')
 
-RETRY_PERIOD = 600
-ENDPOINT = 'https://practicum.yandex.ru/api/user_api/homework_statuses/'
-HEADERS = {'Authorization': f'OAuth {PRACTICUM_TOKEN}'}
+RETRY_PERIOD: int = 600
+ENDPOINT: str = 'https://practicum.yandex.ru/api/user_api/homework_statuses/'
+HEADERS: dict = {'Authorization': f'OAuth {PRACTICUM_TOKEN}'}
 
 
 HOMEWORK_VERDICTS = {
@@ -18,9 +24,23 @@ HOMEWORK_VERDICTS = {
     'rejected': 'Работа проверена: у ревьюера есть замечания.'
 }
 
+START, FAIL, OK = ' start', ' FAIL', ' done'
+CHECK_ENV = 'Пероверка переменных окружения,'
 
-def check_tokens():
-    ...
+
+def check_tokens() -> Optional[bool]:
+    """Проверка доступности переменных окружения."""
+    logging.info(CHECK_ENV, START)
+    tokens = [PRACTICUM_TOKEN, TELEGRAM_TOKEN, TELEGRAM_CHAT_ID]
+    for token in tokens:
+        if token:
+            continue
+        logging.critical(CHECK_ENV, FAIL)
+        raise EnvironmentError
+    logging.info(CHECK_ENV, OK)
+    return True
+
+
 
 
 def send_message(bot, message):
@@ -46,7 +66,7 @@ def main():
 
     ...
 
-    bot = telegram.Bot(token=TELEGRAM_TOKEN)
+    bot = Bot(token=TELEGRAM_TOKEN)
     timestamp = int(time.time())
 
     ...
