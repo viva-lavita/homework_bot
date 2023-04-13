@@ -1,8 +1,10 @@
 import os
 from time import time
+import requests
+import requests.exceptions as ex
 
 from dotenv import load_dotenv
-from typing import Union, Final, Optional
+from typing import Final, Optional
 import logging
 from telegram import Bot
 
@@ -17,7 +19,6 @@ RETRY_PERIOD: int = 600
 ENDPOINT: str = 'https://practicum.yandex.ru/api/user_api/homework_statuses/'
 HEADERS: dict = {'Authorization': f'OAuth {PRACTICUM_TOKEN}'}
 
-
 HOMEWORK_VERDICTS = {
     'approved': 'Работа проверена: ревьюеру всё понравилось. Ура!',
     'reviewing': 'Работа взята на проверку ревьюером.',
@@ -26,13 +27,15 @@ HOMEWORK_VERDICTS = {
 
 START, FAIL, OK = ' start', ' FAIL', ' done'
 CHECK_ENV = 'Пероверка переменных окружения,'
+GET_HOMEWORKS = 'Получение пакета с домашними работами,'
+POST_CHAT = 'Отправка сообщения в чат Telegram,'
 
 
 def check_tokens() -> Optional[bool]:
     """Проверка доступности переменных окружения."""
     logging.info(CHECK_ENV, START)
-    tokens = [PRACTICUM_TOKEN, TELEGRAM_TOKEN, TELEGRAM_CHAT_ID]
-    for token in tokens:
+    tokens = [PRACTICUM_TOKEN, TELEGRAM_TOKEN, TELEGRAM_CHAT_ID]  # Словарь?
+    for token in tokens:  # name_token, token in tokens.items()
         if token:
             continue
         logging.critical(CHECK_ENV, FAIL)
@@ -41,17 +44,36 @@ def check_tokens() -> Optional[bool]:
     return True
 
 
+def send_message(bot: Bot, message: str) -> None:
+    """Отправка сообщения в чат Telegram."""
+    try:
+        bot.send_message(TELEGRAM_CHAT_ID, message)
+        logging.debug(POST_CHAT, OK)
+    except:
+        logging.error(POST_CHAT, FAIL)
 
 
-def send_message(bot, message):
-    ...
-
-
-def get_api_answer(timestamp):
-    ...
+def get_api_answer(timestamp: int) -> Optional[dict]:
+    """Получение через API пакета с домашними работами."""
+    logging.info(GET_HOMEWORKS, START)
+    try:
+        response = requests.get(url=ENDPOINT,
+                                headers=HEADERS,
+                                params={'from_date': timestamp},
+                                timeout=10)
+        response.raise_for_status()
+        logging.info(GET_HOMEWORKS, OK)
+        return response.json()
+    except ex.HTTPError as err:    # Попробовать потом в скобки бахнуть все ошибки разом?
+        logging.error(GET_HOMEWORKS, FAIL, err)
+    except (ex.ConnectionError, ex.Timeout) as err:  # Сетевые проблемы
+        logging.error(GET_HOMEWORKS, FAIL, err)
+    except ex.RequestException as err:               #  Все остальное
+        logging.error(GET_HOMEWORKS, FAIL, err)
 
 
 def check_response(response):
+    """Проверяет ответ API на соответствие документации."""
     ...
 
 
