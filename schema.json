@@ -1,0 +1,23 @@
+{
+    "type": "object",
+    "properties": {
+        "homeworks": {
+            "type": "array",
+            "minItems": 0,
+            "items": {
+                "type": "object",
+                "properties": {
+                    "id": {"type": "integer"},
+                    "status": {"type": "string"},
+                    "homework_name": {"type": "string"},
+                    "reviewer_comment": {"type": "string"},
+                    "date_updated": {"type": "string", "format": "date-time"},
+                    "lesson_name": {"type": "string"}
+                },
+                "required": ["id", "status", "homework_name", "date_updated", "lesson_name"]
+            }
+        },
+        "current_date": {"type": "integer"}
+    },
+    "required": ["homeworks", "current_date"]
+}
