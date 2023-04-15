@@ -30,7 +30,6 @@ HOMEWORK_VERDICTS: dict[str, str] = {
 }
 
 START, FAIL, OK = ' start', ' ...FAIL', ' ...done'
-UNKNOWN_ERROR: str = '...UNKNOWN_ERROR'
 PROGRAM_STOPPED: str = '  Программа принудительно остановлена'
 CHECK_ENV: str = 'Пероверка переменных окружения,'
 GET_HOMEWORKS: str = 'Получение пакета с домашними работами,'
