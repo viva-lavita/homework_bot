@@ -1,38 +1,15 @@
 import logging.config
 import requests
 import requests.exceptions as ex
-import os
 import time
 from http import HTTPStatus
 
-from dotenv import load_dotenv
-from typing import Final
 import telegram
 from typing import Optional
 
 import constants as c
-# import tokens as t
-
-
-# Я вынесла load_dotenv, токены и все константы в отдельные модули
-# contstants.py и tokens.py, но пайтест не найдя их здесь, обплевал
-# меня ошибками. Пришлось вернуть.
-load_dotenv()
-
-
-PRACTICUM_TOKEN: Final = os.getenv('PRACTICUM_TOKEN')
-TELEGRAM_TOKEN: Final = os.getenv('TELEGRAM_TOKEN')
-TELEGRAM_CHAT_ID: Final = os.getenv('TELEGRAM_CHAT_ID')
-
-RETRY_PERIOD: int = 600
-ENDPOINT: str = 'https://practicum.yandex.ru/api/user_api/homework_statuses/'
-HEADERS: dict = {'Authorization': f'OAuth {PRACTICUM_TOKEN}'}
-
-HOMEWORK_VERDICTS: dict[str, str] = {
-    'approved': 'Работа проверена: ревьюеру всё понравилось. Ура!',
-    'reviewing': 'Работа взята на проверку ревьюером.',
-    'rejected': 'Работа проверена: у ревьюера есть замечания.'
-}
+from constants import ENDPOINT, HEADERS, HOMEWORK_VERDICTS, RETRY_PERIOD
+from tokens import TELEGRAM_CHAT_ID, TELEGRAM_TOKEN, PRACTICUM_TOKEN
 
 
 def check_tokens() -> Optional[bool]:
@@ -101,6 +78,13 @@ def parse_status(homework) -> Optional[str]:
     работе статус этой работы.
     """
     logging.debug(f'{c.GET_STATUS_HOMEWORK} start')
+    # AssertionError: Не найдена переменная `HOMEWORK_VERDICTS`.
+    # Не удаляйте и не переименовыв... - Пайтест...
+    # HOMEWORK_VERDICTS: dict[str, str] = {
+    #     'approved': 'Работа проверена: ревьюеру всё понравилось. Ура!',
+    #     'reviewing': 'Работа взята на проверку ревьюером.',
+    #     'rejected': 'Работа проверена: у ревьюера есть замечания.'
+    # }
     try:
         homework_name = homework['homework_name']
         verdict = HOMEWORK_VERDICTS[homework['status']]
@@ -137,6 +121,5 @@ def main() -> None:
 
 if __name__ == '__main__':
     logging.config.fileConfig('log_config.ini')
-    # пайтест попросил вызывать не logger, a logging
     logging = logging.getLogger()
     main()
