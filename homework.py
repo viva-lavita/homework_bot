@@ -1,17 +1,22 @@
-import logging
-# import json
-import os
+import logging.config
 import requests
 import requests.exceptions as ex
+import os
 import time
+from http import HTTPStatus
 
 from dotenv import load_dotenv
-# import jsonschema
-# from jsonschema.exceptions import ValidationError
+from typing import Final
 import telegram
-from typing import Final, Optional
+from typing import Optional
+
+import constants as c
+# import tokens as t
 
 
+# Я вынесла load_dotenv, токены и все константы в отдельные модули
+# contstants.py и tokens.py, но пайтест не найдя их здесь, обплевал
+# меня ошибками. Пришлось вернуть.
 load_dotenv()
 
 
@@ -29,74 +34,56 @@ HOMEWORK_VERDICTS: dict[str, str] = {
     'rejected': 'Работа проверена: у ревьюера есть замечания.'
 }
 
-START, FAIL, OK = ' start', ' ...FAIL', ' ...done'
-PROGRAM_STOPPED: str = '  Программа принудительно остановлена'
-CHECK_ENV: str = 'Пероверка переменных окружения,'
-GET_HOMEWORKS: str = 'Получение пакета с домашними работами,'
-POST_CHAT: str = 'Отправка сообщения в чат Telegram,'
-CHECK_API_RESPONSE: str = 'Проверка ответа API на сооветствие документации,'
-GET_STATUS_HOMEWORK: str = 'Получение статуса домашней работы,'
-HOMEWORK_STATUS_CHANGE: str = 'Изменился статус проверки работы "{0}". {1}'
-MAIN_LOGIC_BOT: str = 'Основная логика работы бота.'
-
 
 def check_tokens() -> Optional[bool]:
     """Проверка доступности переменных окружения."""
-    logging.debug(CHECK_ENV + START)
+    logging.debug(f'{c.CHECK_ENV} start')
     tokens: dict = {'PRACTICUM_TOKEN': PRACTICUM_TOKEN,
                     'TELEGRAM_TOKEN': TELEGRAM_TOKEN,
                     'TELEGRAM_CHAT_ID': TELEGRAM_CHAT_ID}
     for token_name, token in tokens.items():
         if token:
             continue
-        logging.critical(f'{CHECK_ENV, FAIL + token_name, PROGRAM_STOPPED}')
+        logging.critical(
+            f'{c.CHECK_ENV}, FAIL! {token_name}, {c.PROGRAM_STOPPED}'
+        )
         raise EnvironmentError
-    logging.info(CHECK_ENV + OK)
+    logging.info(f'{c.CHECK_ENV} ...OK')
     return True
 
 
 def send_message(bot: telegram.Bot, message: str) -> None:
     """Отправка сообщения в чат Telegram."""
-    logging.debug(POST_CHAT + START)
+    logging.debug(f'{c.POST_CHAT} start')
     try:
         bot.send_message(TELEGRAM_CHAT_ID, message)
-        logging.info(POST_CHAT + OK)
+        logging.info(f'{c.POST_CHAT} ...OK')
     except telegram.error.TelegramError as err:
-        logging.error(f'{POST_CHAT, FAIL, err}')
+        logging.error(f'{c.POST_CHAT} FAIL!, {err}')
 
 
 def get_api_answer(timestamp: int) -> Optional[dict]:
     """Получение через API пакета с домашними работами."""
-    logging.debug(GET_HOMEWORKS + START)
+    logging.debug(f'{c.GET_HOMEWORKS} start')
     try:
         response = requests.get(url=ENDPOINT,
                                 headers=HEADERS,
                                 params={'from_date': timestamp},
                                 timeout=10)
-        # response.raise_for_status()    # у пайтеста нет этого встроенного
-        if response.status_code != 200:  # метода библиотеки requests
-            raise ex.HTTPError           # проверка на 200 - замена
-        logging.info(GET_HOMEWORKS + OK)
+        if response.status_code != HTTPStatus.OK:
+            raise ex.HTTPError
+        logging.info(f'{c.GET_HOMEWORKS} OK')
         return response.json()
     except ex.HTTPError(response) as err:
-        logging.error(f'{GET_HOMEWORKS, FAIL, err}')
+        logging.error(f'{c.GET_HOMEWORKS} FAIL!, {err}')
     except ex.RequestException as err:
-        logging.error(f'{GET_HOMEWORKS, FAIL, err}', exc_info=True)
+        logging.error(f'{c.GET_HOMEWORKS} FAIL!, {err}', exc_info=True)
+        logging.warning
 
 
-# Пайтест сказал, что не знает что такое jsonschema...
-# Просьба по возможности краем глаза посмотреть и его.
 def check_response(response) -> Optional[bool]:
     """Проверяет ответ API на соответствие документации."""
-    logging.debug(CHECK_API_RESPONSE + START)
-    # try:
-    #     with open('schema.json') as f:
-    #         SCHEMA = json.load(f)
-    #     jsonschema.validate(response, SCHEMA)
-    #     logging.info(CHECK_API_RESPONSE + OK)
-    #     return True
-    # except Exception as err:
-    #     logging.error(f'{CHECK_API_RESPONSE, FAIL, err}', exc_info=True)
+    logging.debug(f'{c.CHECK_API_RESPONSE} start')
     if not isinstance(response, dict):
         raise TypeError
     if 'homeworks' not in response:
@@ -104,7 +91,7 @@ def check_response(response) -> Optional[bool]:
     homeworks = response.get('homeworks')
     if not isinstance(homeworks, list):
         raise TypeError
-    logging.debug(CHECK_API_RESPONSE + OK)
+    logging.debug(f'{c.CHECK_API_RESPONSE} OK')
     return True
 
 
@@ -113,15 +100,15 @@ def parse_status(homework) -> Optional[str]:
     Извлекает из информации о конкретной домашней
     работе статус этой работы.
     """
-    logging.debug(GET_STATUS_HOMEWORK + START)
+    logging.debug(f'{c.GET_STATUS_HOMEWORK} start')
     try:
         homework_name = homework['homework_name']
         verdict = HOMEWORK_VERDICTS[homework['status']]
-        logging.info(GET_STATUS_HOMEWORK + OK)
-        return HOMEWORK_STATUS_CHANGE.format(homework_name, verdict)
+        logging.info(f'{c.GET_STATUS_HOMEWORK} OK')
+        return c.HOMEWORK_STATUS_CHANGE.format(homework_name, verdict)
     except Exception as err:
-        logging.error(f'{GET_STATUS_HOMEWORK + FAIL, err}', exc_info=True)
-        raise KeyError  # Пайтест попросил отпустить ошибку дальше
+        logging.error(f'{c.GET_STATUS_HOMEWORK} FAIL!, {err}', exc_info=True)
+        raise KeyError
 
 
 def main() -> None:
@@ -141,7 +128,7 @@ def main() -> None:
                     timestamp: int = response['current_date']
         except Exception as error:
             message: str = f'Сбой в работе программы: {error}'
-            logging.error(f'{MAIN_LOGIC_BOT, FAIL, error}', exc_info=True)
+            logging.error(f'{c.MAIN_LOGIC_BOT} FAIL!, {error}', exc_info=True)
         if last_message != message:
             send_message(bot, message)
             last_message: str = message
@@ -149,9 +136,7 @@ def main() -> None:
 
 
 if __name__ == '__main__':
-    logging.basicConfig(
-        level=logging.DEBUG,
-        format='%(asctime)s, %(levelname)s, %(message)s',
-        filename='main.log', encoding='UTF-8',
-    )
+    logging.config.fileConfig('log_config.ini')
+    # пайтест попросил вызывать не logger, a logging
+    logging = logging.getLogger()
     main()
