@@ -5,13 +5,6 @@ RETRY_PERIOD: int = 600
 ENDPOINT: str = 'https://practicum.yandex.ru/api/user_api/homework_statuses/'
 HEADERS: dict = {'Authorization': f'OAuth {PRACTICUM_TOKEN}'}
 
-# Локально,в функции пайтест ее не видит
-HOMEWORK_VERDICTS: dict[str, str] = {
-    'approved': 'Работа проверена: ревьюеру всё понравилось. Ура!',
-    'reviewing': 'Работа взята на проверку ревьюером.',
-    'rejected': 'Работа проверена: у ревьюера есть замечания.'
-}
-
 PROGRAM_STOPPED: str = '  Программа принудительно остановлена'
 CHECK_ENV: str = 'Пероверка переменных окружения,'
 GET_HOMEWORKS: str = 'Получение пакета с домашними работами,'

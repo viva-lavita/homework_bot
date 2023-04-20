@@ -77,7 +77,6 @@ def parse_status(homework) -> Optional[str]:
     Извлекает из информации о конкретной домашней
     работе статус этой работы.
     """
-    logging.debug(f'{c.GET_STATUS_HOMEWORK} start')
     # AssertionError: Не найдена переменная `HOMEWORK_VERDICTS`.
     # Не удаляйте и не переименовыв... - Пайтест...
     # HOMEWORK_VERDICTS: dict[str, str] = {
@@ -85,6 +84,7 @@ def parse_status(homework) -> Optional[str]:
     #     'reviewing': 'Работа взята на проверку ревьюером.',
     #     'rejected': 'Работа проверена: у ревьюера есть замечания.'
     # }
+    logging.debug(f'{c.GET_STATUS_HOMEWORK} start')
     try:
         homework_name = homework['homework_name']
         verdict = HOMEWORK_VERDICTS[homework['status']]
